@@ -15,12 +15,6 @@ A comprehensive analytics dashboard built with Streamlit and Plotly to visualize
   - User payment behavior breakdown
   - Payment type distribution analysis
 
-- **Interactive Features**
-  - Date range filtering
-  - Dynamic data updates
-  - Interactive charts and graphs
-  - Responsive layout
-
 ## Prerequisites
 
 ```bash
