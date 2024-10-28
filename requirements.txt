@@ -1,0 +1,8 @@
+streamlit
+pandas
+plotly
+gspread
+oauth2client
+numpy
+python-dateutil
+schedule
