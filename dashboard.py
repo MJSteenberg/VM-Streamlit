@@ -228,45 +228,71 @@ with tab1:
 with tab2:
     # Payment metrics visualization
     fig2 = go.Figure()
-    fig2.add_trace(go.Scatter(x=filtered_df['Created at'], 
-                             y=filtered_df['Cumulative All New Paying'],
-                             name='Cumulative New Paying Users',
-                             mode='lines',
-                             line=dict(width=3)))
-    fig2.add_trace(go.Bar(x=filtered_df['Created at'],
-                         y=filtered_df['All New Paying'],
-                         name='New Paying Users (Monthly)',
-                         marker_color='#AF7AC5'))
+    
+    # First trace (line) - Cumulative New Paying Users
+    fig2.add_trace(go.Scatter(
+        x=filtered_df['Created at'], 
+        y=filtered_df['Cumulative All New Paying'],
+        name='Cumulative New Paying Users',
+        mode='lines',
+        line=dict(width=3)
+    ))
+    
+    # Second trace (bar) - New Paying Users Monthly (on secondary y-axis)
+    fig2.add_trace(go.Bar(
+        x=filtered_df['Created at'],
+        y=filtered_df['All New Paying'],
+        name='New Paying Users (Monthly)',
+        marker_color='#AF7AC5',
+        yaxis='y2'  # Assign to secondary y-axis
+    ))
+    
+    # Update layout with secondary y-axis
     fig2.update_layout(
         title='Payment Growth Trends',
         xaxis_title='Date',
-        yaxis_title='Number of Users'
+        yaxis_title='Cumulative Users',
+        yaxis2=dict(
+            title='Monthly New Paying Users',
+            overlaying='y',
+            side='right'
+        ),
+        # Adjust legend position to avoid overlap with the secondary y-axis
+        legend=dict(x=0.02, y=1.15, orientation='h')
     )
+    
     st.plotly_chart(fig2, use_container_width=True)
     
-    # User type breakdown
-    col1, col2 = st.columns(2)
-    with col1:
-        fig3 = px.bar(filtered_df, x='Created at',
-                     y=['New Paying Users', 'Returning, First Purchase', 'Returning, Repeat'],
-                     title='User Payment Behavior Breakdown',
-                     labels={'value': 'Number of Users', 'variable': 'User Type'})
-        st.plotly_chart(fig3, use_container_width=True)
+    # User Payment Behavior Breakdown
+    fig3 = px.bar(filtered_df, x='Created at',
+                 y=['New Paying Users', 'Returning, First Purchase', 'Returning, Repeat'],
+                 title='User Payment Behavior Breakdown',
+                 labels={'value': 'Number of Users', 'variable': 'User Type'})
+    st.plotly_chart(fig3, use_container_width=True)
     
-    with col2:
-        avg_percentages = pd.DataFrame({
-            'Category': ['New Paying', 'Returning (First)', 'Returning (Repeat)'],
-            'Percentage': [
-                filtered_df['New Paying Users'].sum() / filtered_df['Total Paying'].sum() * 100,
-                filtered_df['Returning, First Purchase'].sum() / filtered_df['Total Paying'].sum() * 100,
-                filtered_df['Returning, Repeat'].sum() / filtered_df['Total Paying'].sum() * 100
-            ]
-        })
-        fig4 = px.pie(avg_percentages, values='Percentage', names='Category',
-                     title='Distribution of User Payment Types')
-        st.plotly_chart(fig4, use_container_width=True)
+    # Distribution of User Payment Types
+    avg_percentages = pd.DataFrame({
+        'Category': ['New Paying', 'Returning (First)', 'Returning (Repeat)'],
+        'Percentage': [
+            filtered_df['New Paying Users'].sum() / filtered_df['Total Paying'].sum() * 100,
+            filtered_df['Returning, First Purchase'].sum() / filtered_df['Total Paying'].sum() * 100,
+            filtered_df['Returning, Repeat'].sum() / filtered_df['Total Paying'].sum() * 100
+        ]
+    })
+    fig4 = px.pie(avg_percentages, values='Percentage', names='Category',
+                 title='Distribution of User Payment Types')
+    st.plotly_chart(fig4, use_container_width=True)
 
 with tab3:
+    # Add description
+    st.markdown("""
+    The conversion rate shows the percentage of new users who become paying users. It is calculated as:
+    ```
+    Conversion Rate = (All New Paying Users / Total New Users) × 100
+    ```
+    - **All New Paying Users** includes both users who paid in their first month and those who converted later
+    - A higher conversion rate indicates more effective user monetization
+    """)
     # Conversion metrics
     monthly_conversion = (filtered_df['All New Paying'] / filtered_df['New Users'] * 100).round(2)
     fig5 = go.Figure()
@@ -285,8 +311,17 @@ with tab3:
 
 # Detailed metrics table
 st.subheader("Detailed Metrics")
+
+# Create a copy for display
+display_df = filtered_df.copy()
+
+# Format the 'Created at' column to show month and year and set it as index
+display_df['Created at'] = display_df['Created at'].dt.strftime('%B %Y')
+display_df = display_df.set_index('Created at')
+
+# Display the dataframe with index (which will be frozen)
 st.dataframe(
-    filtered_df.style.format({
+    data=display_df.style.format({
         'New Users': '{:,.0f}',
         'New Paying Users': '{:,.0f}',
         'Returning, First Purchase': '{:,.0f}',
@@ -296,5 +331,6 @@ st.dataframe(
         'Returning, Repeat': '{:,.0f}',
         'Total Paying': '{:,.0f}',
         'Percentage Returning, Repeat': '{:.1f}%'
-    })
+    }),
+    use_container_width=True
 )
