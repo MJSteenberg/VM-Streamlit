@@ -19,6 +19,24 @@ st.markdown("Analysis of user acquisition and purchase patterns")
 ALL_PAYMENT_TYPES = ['InAppPurchase', 'AndroidPayment', 'StripePayment', 'CouponRedemptionCreditReseller']
 
 @st.cache_data
+def process_user_data_cached(payment_types_key):
+    """
+    Cached version of user data processing.
+    payment_types_key should be a tuple (immutable) of the selected payment types
+    """
+    users, purchases = load_data()
+    return process_user_data(users, purchases, payment_types_key)
+
+@st.cache_data
+def process_revenue_data_cached(payment_types_key):
+    """
+    Cached version of revenue data processing.
+    payment_types_key should be a tuple (immutable) of the selected payment types
+    """
+    users, purchases = load_data()
+    return process_revenue_data(users, purchases, payment_types_key)
+
+@st.cache_data
 def load_data():
     users = pd.read_csv("Users.csv")
     purchases = pd.read_csv("Purchase Data.csv")
@@ -225,9 +243,16 @@ if not selected_payment_types:
     st.warning("Please select at least one payment type.")
     st.stop()
 
-# Process data with selected payment types
-df = process_user_data(users, purchases, selected_payment_types)
-df_revenue = process_revenue_data(users, purchases, selected_payment_types)
+# Convert selected payment types to tuple for caching
+payment_types_key = tuple(sorted(selected_payment_types)) 
+
+# Process data with selected payment types using cached functions
+df = process_user_data_cached(payment_types_key)
+df_revenue = process_revenue_data_cached(payment_types_key)
+
+# # Process data with selected payment types
+# df = process_user_data(users, purchases, selected_payment_types)
+# df_revenue = process_revenue_data(users, purchases, selected_payment_types)
 
 # Add date range filter
 date_range = st.sidebar.date_input(
